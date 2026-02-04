@@ -1,60 +1,89 @@
 import { useState } from "react";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { geocodeAddress } from "@/lib/geocoding";
 
 interface CitySearchProps {
   onCitySelect: (city: string, lat: number, lon: number) => void;
-  currentCity: string;
+  currentCity?: string;
 }
 
 export function CitySearch({ onCitySelect, currentCity }: CitySearchProps) {
-  const [search, setSearch] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
-    if (!search.trim()) return;
-    
-    setIsSearching(true);
+    if (!searchQuery.trim()) return;
+
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}&limit=1`
-      );
-      const data = await response.json();
+      const result = await geocodeAddress(searchQuery);
       
-      if (data.length > 0) {
-        const { lat, lon, display_name } = data[0];
-        const cityName = display_name.split(",")[0];
-        onCitySelect(cityName, parseFloat(lat), parseFloat(lon));
-        setSearch("");
+      if (result) {
+        // Extract city name from display name
+        const parts = result.displayName.split(",");
+        const cityName = parts[0]?.trim() || searchQuery;
+        
+        onCitySelect(cityName, result.lat, result.lon);
+        setSearchQuery("");
+      } else {
+        setError("Cidade não encontrada. Tente novamente.");
       }
-    } catch (error) {
-      console.error("Erro ao buscar cidade:", error);
+    } catch {
+      setError("Erro ao buscar cidade. Verifique sua conexão.");
     } finally {
-      setIsSearching(false);
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
     }
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar cidade..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          className="pl-10"
-        />
-      </div>
-      <Button onClick={handleSearch} disabled={isSearching} size="sm">
-        {isSearching ? "..." : "Buscar"}
-      </Button>
-      {currentCity && (
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          <span className="hidden sm:inline">{currentCity}</span>
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Buscar cidade (ex: Pelotas, Porto Alegre...)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="pl-10"
+            disabled={loading}
+          />
         </div>
+        <Button 
+          onClick={handleSearch} 
+          disabled={loading || !searchQuery.trim()}
+          className="gap-2"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Search className="h-4 w-4" />
+          )}
+          <span className="hidden sm:inline">Buscar</span>
+        </Button>
+      </div>
+      
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
+      )}
+      
+      {currentCity && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <MapPin className="h-3 w-3" />
+          Localização atual: {currentCity}
+        </p>
       )}
     </div>
   );
