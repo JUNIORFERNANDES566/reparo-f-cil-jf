@@ -43,6 +43,9 @@ export interface Servico {
   valor: number;
   status: StatusServico;
   tipoServico: string;
+  endereco?: string;
+  latitude?: number;
+  longitude?: number;
   documentos?: Documento[];
   fotosAntes?: Documento[];
   fotosDepois?: Documento[];
@@ -83,4 +86,23 @@ export interface AppConfig {
   empresaEndereco: string;
   empresaTelefone: string;
   empresaEmail: string;
+}
+
+export interface WeatherData {
+  temp: number;
+  tempMin: number;
+  tempMax: number;
+  humidity: number;
+  windSpeed: number;
+  description: string;
+  icon: string;
+  city: string;
+}
+
+export interface WeatherForecast {
+  date: string;
+  tempMin: number;
+  tempMax: number;
+  icon: string;
+  description: string;
 }
