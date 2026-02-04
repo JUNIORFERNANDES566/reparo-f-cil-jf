@@ -1,29 +1,35 @@
 import { useState, useEffect } from "react";
 
 interface GeolocationState {
-  loading: boolean;
   latitude: number | null;
   longitude: number | null;
-  city: string | null;
+  city: string;
+  loading: boolean;
   error: string | null;
 }
 
-export function useGeolocation(): GeolocationState {
+const DEFAULT_CITY = "Pelotas, RS";
+const DEFAULT_LAT = -31.7649;
+const DEFAULT_LON = -52.3371;
+
+export function useGeolocation() {
   const [state, setState] = useState<GeolocationState>({
-    loading: true,
     latitude: null,
     longitude: null,
-    city: null,
+    city: DEFAULT_CITY,
+    loading: true,
     error: null,
   });
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setState((prev) => ({
-        ...prev,
+      setState({
+        latitude: DEFAULT_LAT,
+        longitude: DEFAULT_LON,
+        city: DEFAULT_CITY,
         loading: false,
         error: "Geolocalização não suportada",
-      }));
+      });
       return;
     }
 
@@ -31,40 +37,67 @@ export function useGeolocation(): GeolocationState {
       async (position) => {
         const { latitude, longitude } = position.coords;
         
+        // Reverse geocode to get city name
         try {
-          // Try to get city name from coordinates using reverse geocoding
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=pt-BR`,
+            {
+              headers: {
+                "User-Agent": "ReparoPro/1.0",
+              },
+            }
           );
-          const data = await response.json();
-          const city = data.address?.city || data.address?.town || data.address?.municipality || "Localização atual";
-          const stateAbbr = data.address?.state;
           
-          setState({
-            loading: false,
-            latitude,
-            longitude,
-            city: stateAbbr ? `${city}, ${stateAbbr}` : city,
-            error: null,
-          });
+          if (response.ok) {
+            const data = await response.json();
+            const city = data.address?.city || 
+                        data.address?.town || 
+                        data.address?.municipality ||
+                        data.address?.village ||
+                        DEFAULT_CITY;
+            const state = data.address?.state || "";
+            const cityWithState = state ? `${city}, ${state}` : city;
+            
+            setState({
+              latitude,
+              longitude,
+              city: cityWithState,
+              loading: false,
+              error: null,
+            });
+          } else {
+            setState({
+              latitude,
+              longitude,
+              city: DEFAULT_CITY,
+              loading: false,
+              error: null,
+            });
+          }
         } catch {
           setState({
-            loading: false,
             latitude,
             longitude,
-            city: "Localização atual",
+            city: DEFAULT_CITY,
+            loading: false,
             error: null,
           });
         }
       },
       (error) => {
+        console.warn("Geolocation error:", error.message);
         setState({
+          latitude: DEFAULT_LAT,
+          longitude: DEFAULT_LON,
+          city: DEFAULT_CITY,
           loading: false,
-          latitude: null,
-          longitude: null,
-          city: null,
           error: error.message,
         });
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000, // 5 minutes cache
       }
     );
   }, []);
