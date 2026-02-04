@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, Copy, MessageCircle } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, FileText, Copy, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { Cliente, Orcamento, ItemOrcamento, StatusOrcamento, TipoOrcamento, TipoItem } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -36,7 +36,7 @@ import { openWhatsApp } from "@/lib/whatsapp";
 
 const statusConfig: Record<StatusOrcamento, { label: string; className: string }> = {
   pendente: { label: "Pendente", className: "bg-warning/10 text-warning border-warning/20" },
-  aprovado: { label: "Aprovado", className: "bg-green-100 text-green-700 border-green-200" },
+  aprovado: { label: "Aprovado", className: "bg-success/10 text-success border-success/20" },
   recusado: { label: "Recusado", className: "bg-destructive/10 text-destructive border-destructive/20" },
 };
 
@@ -415,7 +415,7 @@ export default function Orcamentos() {
                               <td className="px-3 py-2 text-right font-medium">{formatCurrency(item.quantidade * item.valorUnitario)}</td>
                               <td className="px-2">
                                 <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRemoveItem(item.id)}>
-                                  <Edit className="h-3 w-3 text-destructive" />
+                                  <Trash2 className="h-3 w-3 text-destructive" />
                                 </Button>
                               </td>
                             </tr>
@@ -462,149 +462,150 @@ export default function Orcamentos() {
         />
       </div>
 
-      <div className="bg-card rounded-xl shadow-card overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredOrcamentos.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="col-span-full bg-card rounded-xl p-12 text-center shadow-card">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
             <p className="text-muted-foreground">
               {search ? "Nenhum orçamento encontrado" : "Nenhum orçamento cadastrado"}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-secondary/50">
-                <tr>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Número</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Título</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Cliente</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Valor</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Status</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredOrcamentos.map((orcamento) => (
-                  <tr key={orcamento.id} className="hover:bg-secondary/30 transition-colors">
-                    <td className="px-6 py-4 font-mono text-sm text-muted-foreground">{orcamento.numero}</td>
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-foreground">{orcamento.titulo}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Válido até: {format(new Date(orcamento.validade), "dd/MM/yyyy")}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{getClienteName(orcamento.clienteId)}</td>
-                    <td className="px-6 py-4 text-right font-semibold text-foreground">{formatCurrency(orcamento.valorTotal)}</td>
-                    <td className="px-6 py-4">
-                      <Badge className={cn("border", statusConfig[orcamento.status].className)}>
-                        {statusConfig[orcamento.status].label}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setPreviewOrcamento(orcamento)}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Visualizar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEdit(orcamento)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDuplicate(orcamento)}>
-                            <Copy className="h-4 w-4 mr-2" />
-                            Duplicar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleShareWhatsApp(orcamento)}>
-                            <MessageCircle className="h-4 w-4 mr-2" />
-                            Enviar WhatsApp
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(orcamento.id)}
-                            className="text-destructive"
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          filteredOrcamentos.map((orcamento) => (
+            <div key={orcamento.id} className="bg-card rounded-xl p-6 shadow-card card-hover">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground font-mono">{orcamento.numero}</p>
+                  <h3 className="font-semibold text-foreground mt-1">{orcamento.titulo}</h3>
+                  <p className="text-sm text-muted-foreground">{getClienteName(orcamento.clienteId)}</p>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-popover">
+                    <DropdownMenuItem onClick={() => setPreviewOrcamento(orcamento)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Visualizar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleShareWhatsApp(orcamento)}>
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Enviar WhatsApp
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDuplicate(orcamento)}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Duplicar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEdit(orcamento)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDelete(orcamento.id)} className="text-destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-lg font-bold text-foreground">
+                  {formatCurrency(orcamento.valorTotal)}
+                </span>
+                <Badge variant="outline" className={cn("text-xs", statusConfig[orcamento.status].className)}>
+                  {statusConfig[orcamento.status].label}
+                </Badge>
+              </div>
+
+              <div className="mt-3 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {orcamento.tipoOrcamento === "detalhado" ? `${orcamento.itens.length} itens` : "Simplificado"}
+                </span>
+                <span>Válido até {format(new Date(orcamento.validade), "dd/MM/yyyy")}</span>
+              </div>
+            </div>
+          ))
         )}
       </div>
 
-      {/* Preview Dialog */}
+      {/* Modal de Preview */}
       <Dialog open={!!previewOrcamento} onOpenChange={() => setPreviewOrcamento(null)}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-display">{previewOrcamento?.numero}</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-lg">
           {previewOrcamento && (
-            <div className="space-y-4 mt-4">
-              <div className="flex items-center justify-between">
-                <Badge className={cn("border", statusConfig[previewOrcamento.status].className)}>
-                  {statusConfig[previewOrcamento.status].label}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
-                  Válido até: {format(new Date(previewOrcamento.validade), "dd/MM/yyyy")}
-                </span>
-              </div>
+            <>
+              <DialogHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-mono">{previewOrcamento.numero}</p>
+                    <DialogTitle className="font-display mt-1">{previewOrcamento.titulo}</DialogTitle>
+                  </div>
+                  <Badge variant="outline" className={cn(statusConfig[previewOrcamento.status].className)}>
+                    {statusConfig[previewOrcamento.status].label}
+                  </Badge>
+                </div>
+              </DialogHeader>
 
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">{previewOrcamento.titulo}</h3>
-                <p className="text-muted-foreground">{getClienteName(previewOrcamento.clienteId)}</p>
-              </div>
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Cliente</p>
+                    <p className="font-medium">{getClienteName(previewOrcamento.clienteId)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Validade</p>
+                    <p className="font-medium">{format(new Date(previewOrcamento.validade), "dd/MM/yyyy")}</p>
+                  </div>
+                </div>
 
-              {previewOrcamento.tipoOrcamento === "detalhado" && previewOrcamento.itens.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-secondary/50">
-                      <tr>
-                        <th className="text-left px-3 py-2">Item</th>
-                        <th className="text-center px-3 py-2">Qtd</th>
-                        <th className="text-right px-3 py-2">Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {previewOrcamento.itens.map((item) => (
-                        <tr key={item.id}>
-                          <td className="px-3 py-2">{item.descricao}</td>
-                          <td className="px-3 py-2 text-center">{item.quantidade} {item.unidade}</td>
-                          <td className="px-3 py-2 text-right">{formatCurrency(item.quantidade * item.valorUnitario)}</td>
+                {previewOrcamento.tipoOrcamento === "detalhado" && previewOrcamento.itens.length > 0 && (
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-secondary/50">
+                        <tr>
+                          <th className="text-left px-3 py-2">Item</th>
+                          <th className="text-center px-3 py-2">Qtd</th>
+                          <th className="text-right px-3 py-2">Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-secondary/30">
-                      <tr>
-                        <td colSpan={2} className="px-3 py-2 text-right font-semibold">Total:</td>
-                        <td className="px-3 py-2 text-right font-bold">{formatCurrency(previewOrcamento.valorTotal)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody className="divide-y">
+                        {previewOrcamento.itens.map((item) => (
+                          <tr key={item.id}>
+                            <td className="px-3 py-2">{item.descricao}</td>
+                            <td className="px-3 py-2 text-center">{item.quantidade} {item.unidade}</td>
+                            <td className="px-3 py-2 text-right">{formatCurrency(item.quantidade * item.valorUnitario)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
-              {previewOrcamento.tipoOrcamento === "simplificado" && (
-                <div className="text-center py-4 bg-secondary/30 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="text-2xl font-bold text-foreground">{formatCurrency(previewOrcamento.valorTotal)}</p>
+                <div className="p-4 bg-primary/5 rounded-lg flex items-center justify-between">
+                  <span className="font-medium">Valor Total</span>
+                  <span className="text-xl font-bold">{formatCurrency(previewOrcamento.valorTotal)}</span>
                 </div>
-              )}
 
-              {previewOrcamento.descricao && (
-                <div className="p-4 bg-secondary/20 rounded-lg">
-                  <p className="text-foreground">{previewOrcamento.descricao}</p>
+                {previewOrcamento.descricao && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Observações</p>
+                    <p className="text-sm mt-1">{previewOrcamento.descricao}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => handleShareWhatsApp(previewOrcamento)}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Enviar WhatsApp
+                  </Button>
                 </div>
-              )}
-            </div>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
