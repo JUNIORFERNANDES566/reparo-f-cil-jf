@@ -90,19 +90,18 @@ export interface AppConfig {
 
 export interface WeatherData {
   temp: number;
-  tempMin: number;
-  tempMax: number;
-  humidity: number;
-  windSpeed: number;
   description: string;
   icon: string;
+  humidity: number;
+  windSpeed: number;
   city: string;
 }
 
 export interface WeatherForecast {
   date: string;
+  temp: number;
   tempMin: number;
   tempMax: number;
-  icon: string;
   description: string;
+  icon: string;
 }
