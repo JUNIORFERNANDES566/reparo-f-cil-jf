@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { format, isSameDay, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, ChevronLeft, ChevronRight, Clock, MapPin, User, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Clock, MapPin, User, MoreHorizontal, Edit, Trash2, X, Upload, FileText, Image as ImageIcon, Camera, Map, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,15 +27,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { Colaborador, Cliente, Servico, StatusServico } from "@/types";
+import { Colaborador, Cliente, Servico, StatusServico, Documento, TipoDocumento } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ServicesMapView } from "@/components/ServicesMapView";
 
 const statusConfig: Record<StatusServico, { label: string; className: string }> = {
   agendado: { label: "Agendado", className: "bg-primary/10 text-primary border-primary/20" },
   em_andamento: { label: "Em Andamento", className: "bg-warning/10 text-warning border-warning/20" },
-  concluido: { label: "Concluído", className: "bg-green-100 text-green-700 border-green-200" },
+  concluido: { label: "Concluído", className: "bg-success/10 text-success border-success/20" },
   cancelado: { label: "Cancelado", className: "bg-destructive/10 text-destructive border-destructive/20" },
 };
 
@@ -62,6 +64,7 @@ export default function Agenda() {
   const [editingServico, setEditingServico] = useState<Servico | null>(null);
   const [selectedServico, setSelectedServico] = useState<Servico | null>(null);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     titulo: "",
@@ -74,6 +77,13 @@ export default function Agenda() {
     status: "agendado" as StatusServico,
     tipoServico: "",
   });
+
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [fotosAntes, setFotosAntes] = useState<Documento[]>([]);
+  const [fotosDepois, setFotosDepois] = useState<Documento[]>([]);
+  const [activeTab, setActiveTab] = useState("calendario");
+  const fotosAntesRef = useRef<HTMLInputElement>(null);
+  const fotosDepoisRef = useRef<HTMLInputElement>(null);
 
   const colaboradoresAtivos = colaboradores.filter((c) => c.ativo);
 
@@ -102,6 +112,9 @@ export default function Agenda() {
       valor: parseFloat(form.valor) || 0,
       status: form.status,
       tipoServico: form.tipoServico,
+      documentos: documentos,
+      fotosAntes: fotosAntes,
+      fotosDepois: fotosDepois,
     };
 
     if (editingServico) {
@@ -143,7 +156,60 @@ export default function Agenda() {
       status: "agendado",
       tipoServico: "",
     });
+    setDocumentos([]);
+    setFotosAntes([]);
+    setFotosDepois([]);
     setEditingServico(null);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, categoria?: TipoDocumento) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        const novoDoc: Documento = {
+          id: crypto.randomUUID(),
+          nome: file.name,
+          tipo: file.type,
+          dataUrl,
+          dataUpload: new Date(),
+          categoria: categoria || "geral",
+        };
+        
+        if (categoria === "antes") {
+          setFotosAntes((prev) => [...prev, novoDoc]);
+        } else if (categoria === "depois") {
+          setFotosDepois((prev) => [...prev, novoDoc]);
+        } else {
+          setDocumentos((prev) => [...prev, novoDoc]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input
+    if (fileInputRef.current && !categoria) {
+      fileInputRef.current.value = "";
+    }
+    if (fotosAntesRef.current && categoria === "antes") {
+      fotosAntesRef.current.value = "";
+    }
+    if (fotosDepoisRef.current && categoria === "depois") {
+      fotosDepoisRef.current.value = "";
+    }
+  };
+
+  const handleRemoveDocumento = (id: string, categoria?: TipoDocumento) => {
+    if (categoria === "antes") {
+      setFotosAntes(fotosAntes.filter((d) => d.id !== id));
+    } else if (categoria === "depois") {
+      setFotosDepois(fotosDepois.filter((d) => d.id !== id));
+    } else {
+      setDocumentos(documentos.filter((d) => d.id !== id));
+    }
   };
 
   const handleDayClick = (date: Date) => {
@@ -169,6 +235,9 @@ export default function Agenda() {
       status: servico.status,
       tipoServico: servico.tipoServico,
     });
+    setDocumentos(servico.documentos || []);
+    setFotosAntes((servico as any).fotosAntes || []);
+    setFotosDepois((servico as any).fotosDepois || []);
     setSelectedServico(null);
     setIsDialogOpen(true);
   };
@@ -336,6 +405,138 @@ export default function Agenda() {
                 />
               </div>
 
+              {/* Upload de Documentos */}
+              <div className="space-y-2">
+                <Label>Documentos Gerais</Label>
+                <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx"
+                    onChange={(e) => handleFileUpload(e)}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                    <p className="text-sm text-muted-foreground">Adicionar documentos</p>
+                  </label>
+                </div>
+
+                {documentos.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {documentos.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="relative group rounded-lg border overflow-hidden bg-secondary/30"
+                      >
+                        {doc.tipo.startsWith("image/") ? (
+                          <img
+                            src={doc.dataUrl}
+                            alt={doc.nome}
+                            className="w-full h-16 object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-16 flex items-center justify-center">
+                            <FileText className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDocumento(doc.id)}
+                          className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Fotos Antes/Depois para Relatório */}
+              <div className="space-y-3 border rounded-lg p-4 bg-secondary/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Camera className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">Relatório de Andamento</Label>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Fotos Antes */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Fotos ANTES</p>
+                    <div className="border-2 border-dashed border-orange-300 rounded-lg p-3 text-center hover:border-orange-400 transition-colors bg-orange-50/50">
+                      <input
+                        ref={fotosAntesRef}
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, "antes")}
+                        className="hidden"
+                        id="fotos-antes"
+                      />
+                      <label htmlFor="fotos-antes" className="cursor-pointer">
+                        <Camera className="h-5 w-5 mx-auto text-orange-500 mb-1" />
+                        <p className="text-xs text-orange-600">Adicionar fotos</p>
+                      </label>
+                    </div>
+                    {fotosAntes.length > 0 && (
+                      <div className="grid grid-cols-2 gap-1">
+                        {fotosAntes.map((foto) => (
+                          <div key={foto.id} className="relative group rounded border overflow-hidden">
+                            <img src={foto.dataUrl} alt={foto.nome} className="w-full h-12 object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDocumento(foto.id, "antes")}
+                              className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-2 w-2" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Fotos Depois */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Fotos DEPOIS</p>
+                    <div className="border-2 border-dashed border-green-300 rounded-lg p-3 text-center hover:border-green-400 transition-colors bg-green-50/50">
+                      <input
+                        ref={fotosDepoisRef}
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, "depois")}
+                        className="hidden"
+                        id="fotos-depois"
+                      />
+                      <label htmlFor="fotos-depois" className="cursor-pointer">
+                        <Camera className="h-5 w-5 mx-auto text-green-500 mb-1" />
+                        <p className="text-xs text-green-600">Adicionar fotos</p>
+                      </label>
+                    </div>
+                    {fotosDepois.length > 0 && (
+                      <div className="grid grid-cols-2 gap-1">
+                        {fotosDepois.map((foto) => (
+                          <div key={foto.id} className="relative group rounded border overflow-hidden">
+                            <img src={foto.dataUrl} alt={foto.nome} className="w-full h-12 object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDocumento(foto.id, "depois")}
+                              className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-2 w-2" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <Button type="submit" className="w-full">
                 {editingServico ? "Salvar Alterações" : "Agendar Serviço"}
               </Button>
@@ -344,125 +545,383 @@ export default function Agenda() {
         </Dialog>
       </div>
 
-      {/* Calendar */}
-      <div className="bg-card rounded-xl shadow-card overflow-hidden">
-        <div className="p-4 border-b flex items-center justify-between">
-          <h2 className="text-lg font-display font-semibold text-foreground">
-            {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
-          </h2>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+      {/* Tabs: Calendário / Mapa */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2 mb-4">
+          <TabsTrigger value="calendario" className="gap-2">
+            <CalendarDays className="h-4 w-4" />
+            Calendário
+          </TabsTrigger>
+          <TabsTrigger value="mapa" className="gap-2">
+            <Map className="h-4 w-4" />
+            Mapa de Serviços
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="calendario">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Calendário */}
+            <div className="lg:col-span-2 bg-card rounded-xl shadow-card overflow-hidden">
+          <div className="p-4 border-b flex items-center justify-between">
+            <h2 className="text-lg font-display font-semibold text-foreground">
+              {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
+            </h2>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {weekDays.map((day) => (
+                <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: startDayOfWeek }).map((_, i) => (
+                <div key={`empty-${i}`} className="aspect-square" />
+              ))}
+
+              {daysInMonth.map((date) => {
+                const dayServicos = getServicosForDay(date);
+                const isToday = isSameDay(date, new Date());
+                const isSelected = selectedDate && isSameDay(date, selectedDate);
+
+                return (
+                  <button
+                    key={date.toISOString()}
+                    onClick={() => handleDayClick(date)}
+                    className={cn(
+                      "aspect-square p-1 rounded-lg border transition-all hover:bg-secondary/50 relative",
+                      isToday && "border-primary",
+                      isSelected && "bg-primary/10 border-primary",
+                      !isToday && !isSelected && "border-transparent"
+                    )}
+                  >
+                    <span className={cn(
+                      "text-sm font-medium",
+                      isToday && "text-primary",
+                      isSelected && "text-primary"
+                    )}>
+                      {format(date, "d")}
+                    </span>
+                    {dayServicos.length > 0 && (
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                        {dayServicos.slice(0, 3).map((s, i) => (
+                          <div
+                            key={i}
+                            className={cn(
+                              "w-1.5 h-1.5 rounded-full",
+                              s.status === "agendado" && "bg-primary",
+                              s.status === "em_andamento" && "bg-warning",
+                              s.status === "concluido" && "bg-success",
+                              s.status === "cancelado" && "bg-destructive"
+                            )}
+                          />
+                        ))}
+                        {dayServicos.length > 3 && (
+                          <span className="text-[10px] text-muted-foreground">+{dayServicos.length - 3}</span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-7">
-          {weekDays.map((day) => (
-            <div key={day} className="p-3 text-center text-sm font-medium text-muted-foreground bg-secondary/50">
-              {day}
-            </div>
-          ))}
+        {/* Lista de serviços do dia selecionado */}
+        <div className="bg-card rounded-xl shadow-card overflow-hidden">
+          <div className="p-4 border-b">
+            <h2 className="text-lg font-display font-semibold text-foreground">
+              {selectedDate
+                ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR })
+                : "Selecione um dia"}
+            </h2>
+          </div>
+
+          <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+            {!selectedDate ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Clique em um dia para ver os serviços
+              </p>
+            ) : getServicosForDay(selectedDate).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Nenhum serviço agendado para este dia
+              </p>
+            ) : (
+              getServicosForDay(selectedDate).map((servico) => (
+                <div
+                  key={servico.id}
+                  onClick={() => setSelectedServico(servico)}
+                  className="p-3 rounded-lg border bg-secondary/30 hover:bg-secondary/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-foreground truncate">{servico.titulo}</h3>
+                      <p className="text-sm text-muted-foreground">{servico.tipoServico}</p>
+                    </div>
+                    <Badge variant="outline" className={cn("shrink-0 text-xs", statusConfig[servico.status].className)}>
+                      {statusConfig[servico.status].label}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {servico.horario}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {getColaboradorName(servico.colaboradorId).split(" ")[0]}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
+          </div>
+        </TabsContent>
 
-        <div className="grid grid-cols-7">
-          {Array.from({ length: startDayOfWeek }).map((_, i) => (
-            <div key={`empty-${i}`} className="p-2 min-h-24 border-t border-r" />
-          ))}
-          {daysInMonth.map((day) => {
-            const dayServicos = getServicosForDay(day);
-            const isToday = isSameDay(day, new Date());
-            const isSelected = selectedDate && isSameDay(day, selectedDate);
+        <TabsContent value="mapa">
+          <div className="space-y-4">
+            <div className="bg-card rounded-xl shadow-card p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Map className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-display font-semibold text-foreground">
+                  Mapa de Serviços Ativos
+                </h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Visualize no mapa os serviços agendados e em andamento. Clique em um marcador para ver os detalhes.
+              </p>
+              <ServicesMapView
+                servicos={servicos}
+                clientes={clientes}
+                onServicoClick={(servico) => setSelectedServico(servico)}
+              />
+            </div>
 
-            return (
-              <div
-                key={day.toISOString()}
-                onClick={() => handleDayClick(day)}
-                className={cn(
-                  "p-2 min-h-24 border-t border-r cursor-pointer hover:bg-secondary/30 transition-colors",
-                  isToday && "bg-primary/5",
-                  isSelected && "ring-2 ring-primary ring-inset"
+            {/* Lista de serviços ativos */}
+            <div className="bg-card rounded-xl shadow-card overflow-hidden">
+              <div className="p-4 border-b">
+                <h3 className="font-display font-semibold text-foreground">
+                  Serviços Ativos ({servicos.filter(s => s.status === "agendado" || s.status === "em_andamento").length})
+                </h3>
+              </div>
+              <div className="p-4 space-y-2 max-h-[300px] overflow-y-auto">
+                {servicos.filter(s => s.status === "agendado" || s.status === "em_andamento").length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum serviço ativo no momento
+                  </p>
+                ) : (
+                  servicos
+                    .filter(s => s.status === "agendado" || s.status === "em_andamento")
+                    .map((servico) => (
+                      <div
+                        key={servico.id}
+                        onClick={() => setSelectedServico(servico)}
+                        className="p-3 rounded-lg border bg-secondary/30 hover:bg-secondary/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-foreground truncate text-sm">{servico.titulo}</h4>
+                            <p className="text-xs text-muted-foreground">
+                              {getClienteName(servico.clienteId)} • {format(parseISO(servico.data), "dd/MM")} às {servico.horario}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className={cn("shrink-0 text-xs", statusConfig[servico.status].className)}>
+                            {statusConfig[servico.status].label}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
                 )}
-              >
-                <span className={cn(
-                  "text-sm font-medium",
-                  isToday && "text-primary"
-                )}>
-                  {format(day, "d")}
-                </span>
-                <div className="mt-1 space-y-1">
-                  {dayServicos.slice(0, 2).map((servico) => (
-                    <div
-                      key={servico.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedServico(servico);
-                      }}
-                      className={cn(
-                        "text-xs px-1.5 py-0.5 rounded truncate",
-                        statusConfig[servico.status].className
-                      )}
-                    >
-                      {servico.titulo}
-                    </div>
-                  ))}
-                  {dayServicos.length > 2 && (
-                    <div className="text-xs text-muted-foreground">
-                      +{dayServicos.length - 2} mais
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Selected Service Details */}
-      <Dialog open={!!selectedServico} onOpenChange={() => setSelectedServico(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="font-display">{selectedServico?.titulo}</DialogTitle>
-          </DialogHeader>
-          {selectedServico && (
-            <div className="space-y-4 mt-4">
-              <Badge className={statusConfig[selectedServico.status].className}>
-                {statusConfig[selectedServico.status].label}
-              </Badge>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>{format(parseISO(selectedServico.data), "dd/MM/yyyy")} às {selectedServico.horario}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <User className="h-4 w-4" />
-                  <span>{getClienteName(selectedServico.clienteId)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{getColaboradorName(selectedServico.colaboradorId)}</span>
-                </div>
-              </div>
-
-              {selectedServico.descricao && (
-                <p className="text-foreground">{selectedServico.descricao}</p>
-              )}
-
-              <div className="flex gap-2 pt-4">
-                <Button variant="outline" className="flex-1" onClick={() => handleEdit(selectedServico)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
-                <Button variant="destructive" className="flex-1" onClick={() => handleDelete(selectedServico.id)}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir
-                </Button>
               </div>
             </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal de detalhes do serviço */}
+      <Dialog open={!!selectedServico} onOpenChange={() => setSelectedServico(null)}>
+        <DialogContent className="sm:max-w-md">
+          {selectedServico && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <DialogTitle className="font-display">{selectedServico.titulo}</DialogTitle>
+                    <Badge variant="outline" className={cn("mt-2", statusConfig[selectedServico.status].className)}>
+                      {statusConfig[selectedServico.status].label}
+                    </Badge>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover z-50">
+                      <DropdownMenuItem onClick={() => handleEdit(selectedServico)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(selectedServico.id)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tipo de Serviço</p>
+                    <p className="font-medium">{selectedServico.tipoServico}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valor</p>
+                    <p className="font-medium">
+                      {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(selectedServico.valor)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Data</p>
+                    <p className="font-medium">{format(parseISO(selectedServico.data), "dd/MM/yyyy")}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Horário</p>
+                    <p className="font-medium">{selectedServico.horario}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-muted-foreground">Cliente</p>
+                  <p className="font-medium">{getClienteName(selectedServico.clienteId)}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-muted-foreground">Colaborador Responsável</p>
+                  <p className="font-medium">{getColaboradorName(selectedServico.colaboradorId)}</p>
+                </div>
+
+                {selectedServico.descricao && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Descrição</p>
+                    <p className="text-sm">{selectedServico.descricao}</p>
+                  </div>
+                )}
+
+                {selectedServico.documentos && selectedServico.documentos.length > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Documentos Anexados</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {selectedServico.documentos.map((doc) => (
+                        <a
+                          key={doc.id}
+                          href={doc.dataUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-lg border overflow-hidden bg-secondary/30 hover:border-primary transition-colors"
+                        >
+                          {doc.tipo.startsWith("image/") ? (
+                            <img
+                              src={doc.dataUrl}
+                              alt={doc.nome}
+                              className="w-full h-14 object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-14 flex items-center justify-center">
+                              <FileText className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Relatório de Andamento - Fotos Antes/Depois */}
+                {(((selectedServico as any).fotosAntes && (selectedServico as any).fotosAntes.length > 0) || 
+                  ((selectedServico as any).fotosDepois && (selectedServico as any).fotosDepois.length > 0)) && (
+                  <div className="border rounded-lg p-3 bg-secondary/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Camera className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-medium text-foreground">Relatório de Andamento</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Fotos Antes */}
+                      <div>
+                        <p className="text-xs font-medium text-orange-600 mb-2 flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-orange-500" />
+                          Antes
+                        </p>
+                        {(selectedServico as any).fotosAntes && (selectedServico as any).fotosAntes.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-1">
+                            {(selectedServico as any).fotosAntes.map((foto: Documento) => (
+                              <a
+                                key={foto.id}
+                                href={foto.dataUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded border overflow-hidden hover:border-orange-400 transition-colors"
+                              >
+                                <img src={foto.dataUrl} alt={foto.nome} className="w-full h-16 object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Sem fotos</p>
+                        )}
+                      </div>
+
+                      {/* Fotos Depois */}
+                      <div>
+                        <p className="text-xs font-medium text-green-600 mb-2 flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-green-500" />
+                          Depois
+                        </p>
+                        {(selectedServico as any).fotosDepois && (selectedServico as any).fotosDepois.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-1">
+                            {(selectedServico as any).fotosDepois.map((foto: Documento) => (
+                              <a
+                                key={foto.id}
+                                href={foto.dataUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded border overflow-hidden hover:border-green-400 transition-colors"
+                              >
+                                <img src={foto.dataUrl} alt={foto.nome} className="w-full h-16 object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Sem fotos</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

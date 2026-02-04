@@ -76,11 +76,13 @@ export default function Dashboard() {
   const [showServicosChart, setShowServicosChart] = useState(false);
   const [showFaturamentoChart, setShowFaturamentoChart] = useState(false);
 
+  // Geolocation state
   const geolocation = useGeolocation();
   const [currentCity, setCurrentCity] = useState<string>("");
   const [currentLat, setCurrentLat] = useState<number | null>(null);
   const [currentLon, setCurrentLon] = useState<number | null>(null);
 
+  // Update location from geolocation
   useEffect(() => {
     if (!geolocation.loading && geolocation.city) {
       setCurrentCity(geolocation.city);
@@ -89,12 +91,14 @@ export default function Dashboard() {
     }
   }, [geolocation.loading, geolocation.city, geolocation.latitude, geolocation.longitude]);
 
+  // Handle city search
   const handleCitySelect = (city: string, lat: number, lon: number) => {
     setCurrentCity(city);
     setCurrentLat(lat);
     setCurrentLon(lon);
   };
 
+  // Calculate stats
   const colaboradoresAtivos = colaboradores.filter(c => c.ativo).length;
   const servicosMes = servicos.filter(s => {
     const dataServico = new Date(s.data);
@@ -103,6 +107,7 @@ export default function Dashboard() {
   });
   const faturamentoMes = servicosMes.filter(s => s.status === "concluido").reduce((acc, s) => acc + s.valor, 0);
 
+  // Calculate previous month for comparison
   const lastMonth = subMonths(new Date(), 1);
   const servicosLastMonth = servicos.filter(s => {
     const dataServico = new Date(s.data);
@@ -110,6 +115,7 @@ export default function Dashboard() {
   });
   const faturamentoLastMonth = servicosLastMonth.filter(s => s.status === "concluido").reduce((acc, s) => acc + s.valor, 0);
 
+  // Calculate percentages
   const servicosChange = servicosLastMonth.length > 0 
     ? ((servicosMes.length - servicosLastMonth.length) / servicosLastMonth.length * 100).toFixed(0)
     : servicosMes.length > 0 ? "+100" : "0";
@@ -117,6 +123,7 @@ export default function Dashboard() {
     ? ((faturamentoMes - faturamentoLastMonth) / faturamentoLastMonth * 100).toFixed(0)
     : faturamentoMes > 0 ? "+100" : "0";
 
+  // Data for monthly chart (last 6 months)
   const monthlyData = Array.from({ length: 6 }, (_, i) => {
     const date = subMonths(new Date(), 5 - i);
     const monthStart = startOfMonth(date);
@@ -138,16 +145,19 @@ export default function Dashboard() {
     };
   });
 
+  // Data for status pie chart
   const statusData = Object.entries(statusColors).map(([status, color]) => ({
     name: statusLabels[status as keyof typeof statusLabels],
     value: servicosMes.filter(s => s.status === status).length,
     color,
   })).filter(d => d.value > 0);
 
+  // Extract city name for weather API (remove state suffix)
   const weatherCity = currentCity.split(",")[0]?.trim() || "Pelotas";
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Header with Weather */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
@@ -159,6 +169,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Weather Section */}
       {config.openWeatherApiKey && (
         <div className="bg-card rounded-xl p-4 shadow-card">
           <div className="flex items-center gap-2 mb-3">
@@ -172,8 +183,12 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div onClick={() => navigate("/clientes")} className="cursor-pointer group">
+        <div 
+          onClick={() => navigate("/clientes")}
+          className="cursor-pointer group"
+        >
           <StatCard
             title="Total de Clientes"
             value={clientes.length}
@@ -182,7 +197,10 @@ export default function Dashboard() {
           />
         </div>
         
-        <div onClick={() => navigate("/colaboradores")} className="cursor-pointer group">
+        <div 
+          onClick={() => navigate("/colaboradores")}
+          className="cursor-pointer group"
+        >
           <StatCard
             title="Colaboradores Ativos"
             value={colaboradoresAtivos}
@@ -191,7 +209,10 @@ export default function Dashboard() {
           />
         </div>
         
-        <div onClick={() => setShowServicosChart(true)} className="cursor-pointer group">
+        <div 
+          onClick={() => setShowServicosChart(true)}
+          className="cursor-pointer group"
+        >
           <div className="relative">
             <StatCard
               title="Serviços este Mês"
@@ -211,7 +232,10 @@ export default function Dashboard() {
           </div>
         </div>
         
-        <div onClick={() => setShowFaturamentoChart(true)} className="cursor-pointer group">
+        <div 
+          onClick={() => setShowFaturamentoChart(true)}
+          className="cursor-pointer group"
+        >
           <div className="relative">
             <StatCard
               title="Faturamento Mês"
@@ -232,6 +256,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Button 
           variant="outline" 
@@ -267,7 +292,9 @@ export default function Dashboard() {
         </Button>
       </div>
 
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Collaborators */}
         <div className="bg-card rounded-xl p-6 shadow-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-display font-semibold text-foreground">
@@ -306,6 +333,7 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Recent Clients */}
         <div className="bg-card rounded-xl p-6 shadow-card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-display font-semibold text-foreground">
@@ -342,12 +370,14 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Services Chart Dialog */}
       <Dialog open={showServicosChart} onOpenChange={setShowServicosChart}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-display">Serviços - Últimos 6 Meses</DialogTitle>
           </DialogHeader>
           <div className="mt-4 space-y-6">
+            {/* Monthly Services Bar Chart */}
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
@@ -361,11 +391,12 @@ export default function Dashboard() {
                       borderRadius: '8px'
                     }}
                   />
-                  <Bar dataKey="servicos" name="Serviços" fill="hsl(221 83% 53%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="servicos" name="Serviços" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
+            {/* Status Pie Chart */}
             {statusData.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-3">Status dos Serviços (Este Mês)</h3>
@@ -402,6 +433,7 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Revenue Chart Dialog */}
       <Dialog open={showFaturamentoChart} onOpenChange={setShowFaturamentoChart}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -437,12 +469,39 @@ export default function Dashboard() {
                   <Line 
                     type="monotone" 
                     dataKey="faturamento" 
-                    stroke="hsl(32 95% 44%)" 
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(32 95% 44%)", strokeWidth: 2 }}
+                    stroke="hsl(var(--accent))" 
+                    strokeWidth={3}
+                    dot={{ fill: "hsl(var(--accent))", strokeWidth: 2 }}
+                    activeDot={{ r: 6 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t">
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Total 6 meses</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+                    monthlyData.reduce((acc, m) => acc + m.faturamento, 0)
+                  )}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Média Mensal</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+                    monthlyData.reduce((acc, m) => acc + m.faturamento, 0) / 6
+                  )}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Total Serviços</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {monthlyData.reduce((acc, m) => acc + m.servicos, 0)}
+                </p>
+              </div>
             </div>
           </div>
         </DialogContent>

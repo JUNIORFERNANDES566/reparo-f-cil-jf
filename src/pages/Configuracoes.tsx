@@ -39,6 +39,7 @@ export default function Configuracoes() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Dados da Empresa */}
         <div className="bg-card rounded-xl p-6 shadow-card">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -105,6 +106,7 @@ export default function Configuracoes() {
           </div>
         </div>
 
+        {/* API Keys */}
         <div className="bg-card rounded-xl p-6 shadow-card">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">

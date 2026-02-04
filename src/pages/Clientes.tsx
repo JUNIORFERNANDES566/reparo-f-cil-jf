@@ -118,11 +118,13 @@ export default function Clientes() {
   const formatCpfCnpj = (value: string) => {
     const digits = value.replace(/\D/g, "");
     if (digits.length <= 11) {
+      // CPF: 000.000.000-00
       return digits
         .replace(/(\d{3})(\d)/, "$1.$2")
         .replace(/(\d{3})(\d)/, "$1.$2")
         .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
     } else {
+      // CNPJ: 00.000.000/0000-00
       return digits
         .replace(/(\d{2})(\d)/, "$1.$2")
         .replace(/(\d{3})(\d)/, "$1.$2")
@@ -335,6 +337,7 @@ export default function Clientes() {
         )}
       </div>
 
+      {/* Notes Dialog */}
       <Dialog open={!!showNotes} onOpenChange={() => setShowNotes(null)}>
         <DialogContent>
           <DialogHeader>
