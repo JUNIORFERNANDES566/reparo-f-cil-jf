@@ -4,8 +4,8 @@ export interface Colaborador {
   email: string;
   telefone: string;
   funcao: string;
-  ativo: boolean;
   dataCadastro: Date;
+  ativo: boolean;
 }
 
 export interface Cliente {
@@ -15,12 +15,13 @@ export interface Cliente {
   telefone: string;
   endereco: string;
   cidade: string;
-  cpfCnpj?: string;
-  anotacoes?: string;
+  cpfCnpj: string;
+  anotacoes: string;
   dataCadastro: Date;
 }
 
 export type StatusServico = "agendado" | "em_andamento" | "concluido" | "cancelado";
+
 export type TipoDocumento = "geral" | "antes" | "depois";
 
 export interface Documento {
@@ -29,7 +30,18 @@ export interface Documento {
   tipo: string;
   dataUrl: string;
   dataUpload: Date;
-  categoria: TipoDocumento;
+  categoria?: TipoDocumento;
+  descricao?: string;
+}
+
+export interface RelatorioAndamento {
+  id: string;
+  servicoId: string;
+  descricao: string;
+  fotosAntes: Documento[];
+  fotosDepois: Documento[];
+  dataCriacao: Date;
+  dataAtualizacao: Date;
 }
 
 export interface Servico {
@@ -43,17 +55,17 @@ export interface Servico {
   valor: number;
   status: StatusServico;
   tipoServico: string;
-  endereco?: string;
-  latitude?: number;
-  longitude?: number;
+  dataCadastro: Date;
   documentos?: Documento[];
   fotosAntes?: Documento[];
   fotosDepois?: Documento[];
-  dataCadastro: Date;
+  latitude?: number;
+  longitude?: number;
 }
 
+// Orçamentos
 export type StatusOrcamento = "pendente" | "aprovado" | "recusado";
-export type TipoOrcamento = "simplificado" | "detalhado";
+export type TipoOrcamento = "detalhado" | "simplificado";
 export type TipoItem = "material" | "mao_de_obra";
 
 export interface ItemOrcamento {
@@ -79,6 +91,21 @@ export interface Orcamento {
   dataCadastro: Date;
 }
 
+// Nota Fiscal
+export type TipoNota = "fiscal" | "nao_fiscal";
+
+export interface NotaFiscal {
+  id: string;
+  numero: string;
+  servicoId: string;
+  clienteId: string;
+  tipo: TipoNota;
+  valor: number;
+  descricao: string;
+  dataEmissao: Date;
+}
+
+// Configurações
 export interface AppConfig {
   openWeatherApiKey: string;
   empresaNome: string;
@@ -88,6 +115,7 @@ export interface AppConfig {
   empresaEmail: string;
 }
 
+// Weather
 export interface WeatherData {
   temp: number;
   description: string;
