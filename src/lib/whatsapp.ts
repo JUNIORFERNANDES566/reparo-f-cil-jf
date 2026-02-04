@@ -1,23 +1,25 @@
-export function formatPhoneNumber(phone: string): string {
-  // Remove all non-numeric characters
-  const cleaned = phone.replace(/\D/g, "");
+/**
+ * Formata um número de telefone e retorna o link do WhatsApp
+ */
+export const formatWhatsAppLink = (telefone: string): string => {
+  // Remove todos os caracteres não numéricos
+  const cleanNumber = telefone.replace(/\D/g, "");
   
-  // Add Brazil country code if not present
-  if (cleaned.length === 11) {
-    return `55${cleaned}`;
-  } else if (cleaned.length === 10) {
-    return `55${cleaned}`;
+  // Se o número já começar com 55, não adiciona novamente
+  const fullNumber = cleanNumber.startsWith("55") ? cleanNumber : `55${cleanNumber}`;
+  
+  return `https://wa.me/${fullNumber}`;
+};
+
+/**
+ * Abre o WhatsApp com uma mensagem pré-definida
+ */
+export const openWhatsApp = (telefone: string, message?: string): void => {
+  let url = formatWhatsAppLink(telefone);
+  
+  if (message) {
+    url += `?text=${encodeURIComponent(message)}`;
   }
   
-  return cleaned;
-}
-
-export function openWhatsApp(phone: string, message?: string): void {
-  const formattedPhone = formatPhoneNumber(phone);
-  const encodedMessage = message ? encodeURIComponent(message) : "";
-  const url = message 
-    ? `https://wa.me/${formattedPhone}?text=${encodedMessage}`
-    : `https://wa.me/${formattedPhone}`;
-  
   window.open(url, "_blank");
-}
+};
