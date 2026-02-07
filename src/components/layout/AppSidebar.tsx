@@ -31,12 +31,12 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg gradient-accent flex items-center justify-center">
-            <span className="text-accent-foreground font-bold text-lg">RP</span>
+            <span className="text-accent-foreground font-bold text-lg">JF</span>
           </div>
           {!isCollapsed && (
             <div className="animate-fade-in">
               <h1 className="font-display font-bold text-sidebar-foreground text-lg leading-tight">
-                ReparoPro
+                JF Serviços
               </h1>
               <p className="text-xs text-sidebar-foreground/60">Gestão de Serviços</p>
             </div>

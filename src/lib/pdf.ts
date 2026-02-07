@@ -19,7 +19,7 @@ export function generateNotaFiscalPDF(
   // Header
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
-  doc.text(config.empresaNome || "ReparoPro", pageWidth / 2, 25, { align: "center" });
+  doc.text(config.empresaNome || "JF Serviços", pageWidth / 2, 25, { align: "center" });
   
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
@@ -124,7 +124,7 @@ export function generateOrcamentoPDF(
   // Header
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
-  doc.text(config.empresaNome || "ReparoPro", pageWidth / 2, 25, { align: "center" });
+  doc.text(config.empresaNome || "JF Serviços", pageWidth / 2, 25, { align: "center" });
   
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");

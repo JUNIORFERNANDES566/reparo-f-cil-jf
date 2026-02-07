@@ -43,7 +43,7 @@ export function useGeolocation() {
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=pt-BR`,
             {
               headers: {
-                "User-Agent": "ReparoPro/1.0",
+                "User-Agent": "JFServicos/1.0",
               },
             }
           );
