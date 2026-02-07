@@ -160,7 +160,7 @@ export default function Dashboard() {
       {/* Header with Weather */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-3xl font-display font-bold text-foreground">Gerenciamento JF</h1>
           <p className="text-muted-foreground mt-1">Visão geral do seu negócio</p>
         </div>
         
