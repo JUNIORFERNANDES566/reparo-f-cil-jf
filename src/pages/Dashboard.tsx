@@ -184,31 +184,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div 
-          onClick={() => navigate("/clientes")}
-          className="cursor-pointer group"
-        >
-          <StatCard
-            title="Total de Clientes"
-            value={clientes.length}
-            icon={Users}
-            variant="primary"
-          />
-        </div>
-        
-        <div 
-          onClick={() => navigate("/colaboradores")}
-          className="cursor-pointer group"
-        >
-          <StatCard
-            title="Colaboradores Ativos"
-            value={colaboradoresAtivos}
-            icon={UserCheck}
-            variant="accent"
-          />
-        </div>
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div 
           onClick={() => setShowServicosChart(true)}
           className="cursor-pointer group"
