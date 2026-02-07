@@ -12,7 +12,7 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=br&limit=1`,
       {
         headers: {
-          "User-Agent": "ReparoPro/1.0",
+          "User-Agent": "JFServicos/1.0",
         },
       }
     );
