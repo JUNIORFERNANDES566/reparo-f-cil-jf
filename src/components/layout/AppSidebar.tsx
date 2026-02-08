@@ -20,7 +20,7 @@ const menuItems = [
   { title: "Gerenciamento JF", url: "/", icon: Home },
   { title: "Agenda", url: "/agenda", icon: CalendarDays },
   { title: "Orçamentos", url: "/orcamentos", icon: FileText },
-  { title: "Colaboradores", url: "/colaboradores", icon: UserCheck, showServiceCount: true },
+  { title: "Colaboradores", url: "/colaboradores", icon: UserCheck },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
@@ -69,12 +69,7 @@ export function AppSidebar() {
                       activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
                     >
                       <item.icon className="h-5 w-5" />
-                      <span className="flex-1">{item.title}</span>
-                      {item.showServiceCount && !isCollapsed && totalServicos > 0 && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-sidebar-accent border-sidebar-border">
-                          {totalServicos}/{servicosConcluidos}✓
-                        </Badge>
-                      )}
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -82,6 +77,31 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Resumo de Serviços */}
+        {!isCollapsed && totalServicos > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs uppercase tracking-wider px-3">
+              Serviços
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="px-3 py-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-sidebar-foreground/70">Total</span>
+                  <Badge variant="outline" className="bg-sidebar-accent border-sidebar-border">
+                    {totalServicos}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm mt-2">
+                  <span className="text-sidebar-foreground/70">Concluídos</span>
+                  <Badge variant="outline" className="bg-success/10 text-success border-success/20">
+                    {servicosConcluidos} ✓
+                  </Badge>
+                </div>
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
     </Sidebar>
   );
