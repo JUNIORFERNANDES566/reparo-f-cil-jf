@@ -19,13 +19,22 @@ import {
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { Colaborador } from "@/types";
+import { Colaborador, Servico } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { openWhatsApp } from "@/lib/whatsapp";
 
 export default function Colaboradores() {
   const [colaboradores, setColaboradores] = useLocalStorage<Colaborador[]>("colaboradores", []);
+  const [servicos] = useLocalStorage<Servico[]>("servicos", []);
   const [search, setSearch] = useState("");
+
+  // Função para contar serviços por colaborador
+  const getServicosCount = (colaboradorId: string) => {
+    const servicosColaborador = servicos.filter(s => s.colaboradorId === colaboradorId);
+    const total = servicosColaborador.length;
+    const concluidos = servicosColaborador.filter(s => s.status === "concluido").length;
+    return { total, concluidos };
+  };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingColaborador, setEditingColaborador] = useState<Colaborador | null>(null);
   const { toast } = useToast();
@@ -210,11 +219,12 @@ export default function Colaboradores() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-secondary/50">
+                <thead className="bg-secondary/50">
                 <tr>
                   <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Nome</th>
                   <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Função</th>
                   <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Contato</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Serviços</th>
                   <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Status</th>
                   <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Ações</th>
                 </tr>
@@ -249,6 +259,16 @@ export default function Colaboradores() {
                           </Button>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        const { total, concluidos } = getServicosCount(colaborador.id);
+                        return (
+                          <Badge variant="outline" className="text-xs">
+                            {total > 0 ? `${total} / ${concluidos} ✓` : "0"}
+                          </Badge>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4">
                       <Badge variant={colaborador.ativo ? "default" : "secondary"}>

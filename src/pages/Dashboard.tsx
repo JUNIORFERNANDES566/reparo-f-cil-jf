@@ -152,6 +152,23 @@ export default function Dashboard() {
     color,
   })).filter(d => d.value > 0);
 
+  // Data for revenue per collaborator
+  const faturamentoPorColaborador = colaboradores
+    .map(colaborador => {
+      const servicosColaborador = servicos.filter(
+        s => s.colaboradorId === colaborador.id && s.status === "concluido"
+      );
+      const faturamento = servicosColaborador.reduce((acc, s) => acc + s.valor, 0);
+      return {
+        id: colaborador.id,
+        nome: colaborador.nome,
+        faturamento,
+        servicosConcluidos: servicosColaborador.length,
+      };
+    })
+    .filter(c => c.faturamento > 0)
+    .sort((a, b) => b.faturamento - a.faturamento);
+
   // Extract city name for weather API (remove state suffix)
   const weatherCity = currentCity.split(",")[0]?.trim() || "Pelotas";
 
@@ -345,6 +362,33 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Faturamento por Colaborador */}
+      {faturamentoPorColaborador.length > 0 && (
+        <div className="bg-card rounded-xl p-6 shadow-card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-display font-semibold text-foreground">
+              Faturamento por Colaborador
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {faturamentoPorColaborador.slice(0, 5).map((colab, index) => (
+              <div key={colab.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                  {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{colab.nome}</p>
+                  <p className="text-xs text-muted-foreground">{colab.servicosConcluidos} serviços concluídos</p>
+                </div>
+                <span className="font-bold text-success">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(colab.faturamento)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Services Chart Dialog */}
       <Dialog open={showServicosChart} onOpenChange={setShowServicosChart}>
