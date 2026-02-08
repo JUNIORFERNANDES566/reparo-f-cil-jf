@@ -12,12 +12,15 @@ import {
   SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { Servico } from "@/types";
+import { Badge } from "@/components/ui/badge";
 
 const menuItems = [
   { title: "Gerenciamento JF", url: "/", icon: Home },
   { title: "Agenda", url: "/agenda", icon: CalendarDays },
   { title: "Orçamentos", url: "/orcamentos", icon: FileText },
-  { title: "Colaboradores", url: "/colaboradores", icon: UserCheck },
+  { title: "Colaboradores", url: "/colaboradores", icon: UserCheck, showServiceCount: true },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
@@ -25,6 +28,11 @@ const menuItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [servicos] = useLocalStorage<Servico[]>("servicos", []);
+
+  // Contagem de serviços
+  const totalServicos = servicos.length;
+  const servicosConcluidos = servicos.filter(s => s.status === "concluido").length;
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -61,7 +69,12 @@ export function AppSidebar() {
                       activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
                     >
                       <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {item.showServiceCount && !isCollapsed && totalServicos > 0 && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 bg-sidebar-accent border-sidebar-border">
+                          {totalServicos}/{servicosConcluidos}✓
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
