@@ -33,11 +33,20 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Capacitor
+      - name: Install Capacitor CLI & Sync
         run: |
+          # Instala o CLI globalmente no runner para garantir o executável
+          npm install -g @capacitor/cli @capacitor/core @capacitor/android
+          
+          # Tenta inicializar se o arquivo de config não existir
+          if [ ! -f "capacitor.config.ts" ] && [ ! -f "capacitor.config.json" ]; then
+            npx cap init "JF Servicos" "com.jfservicos.app" --web-dir dist
+          fi
+
+          # Adiciona a pasta android e sincroniza
           npx cap add android || true
           npx cap sync android
-
+          
       - name: Build APK (Debug)
         run: |
           cd android
