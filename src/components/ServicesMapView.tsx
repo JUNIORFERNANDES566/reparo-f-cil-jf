@@ -199,7 +199,7 @@ export function ServicesMapView({
           ].filter(Boolean).join(" - ") || cliente?.endereco || "";
 
           const popupContent = `
-            <div style="min-width: 200px;">
+            <div style="min-width: 220px;">
               <h4 style="font-weight: 600; margin: 0 0 8px 0;">${servico.titulo}</h4>
               <p style="margin: 4px 0; font-size: 12px; color: #666;">
                 <strong>Status:</strong> ${statusLabels[servico.status] || servico.status}
@@ -214,11 +214,20 @@ export function ServicesMapView({
                 <strong>Endereço:</strong> ${enderecoCompleto}
               </p>` : ""}
               <p style="margin: 4px 0; font-size: 12px; color: #666;">
-                <strong>Data:</strong> ${new Date(servico.data).toLocaleDateString("pt-BR")}
+                <strong>Data:</strong> ${new Date(servico.data).toLocaleDateString("pt-BR")} às ${servico.horario}
               </p>
-              <p style="margin: 4px 0; font-size: 12px; color: #666;">
-                <strong>Horário:</strong> ${servico.horario}
-              </p>
+              <div style="display: flex; gap: 6px; margin-top: 10px;">
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" target="_blank" rel="noopener noreferrer"
+                  style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px 8px; background:#4285F4; color:white; border-radius:6px; font-size:11px; font-weight:600; text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Google Maps
+                </a>
+                <a href="https://waze.com/ul?ll=${lat},${lon}&navigate=yes" target="_blank" rel="noopener noreferrer"
+                  style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px; padding:6px 8px; background:#33CCFF; color:white; border-radius:6px; font-size:11px; font-weight:600; text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                  Waze
+                </a>
+              </div>
             </div>
           `;
 
