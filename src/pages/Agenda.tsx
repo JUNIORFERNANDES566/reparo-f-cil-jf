@@ -33,6 +33,7 @@ import { Colaborador, Cliente, Servico, StatusServico, Documento, TipoDocumento 
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ServicesMapView } from "@/components/ServicesMapView";
+import { geocodeAddress } from "@/lib/geocoding";
 
 const statusConfig: Record<StatusServico, { label: string; className: string }> = {
   agendado: { label: "Agendado", className: "bg-primary/10 text-primary border-primary/20" },
@@ -104,8 +105,29 @@ export default function Agenda() {
     return servicos.filter((s) => isSameDay(parseISO(s.data), date));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Build address string for geocoding
+    const addressParts = [form.rua, form.numero].filter(Boolean);
+    const addressString = addressParts.length > 0
+      ? `${addressParts.join(", ")}${form.cep ? ` - ${form.cep}` : ""}`
+      : "";
+
+    let latitude: number | undefined;
+    let longitude: number | undefined;
+
+    if (addressString) {
+      try {
+        const result = await geocodeAddress(addressString);
+        if (result) {
+          latitude = result.lat;
+          longitude = result.lon;
+        }
+      } catch {
+        console.warn("Geocoding failed, saving without coordinates");
+      }
+    }
 
     const servicoData = {
       titulo: form.titulo,
@@ -125,6 +147,8 @@ export default function Agenda() {
       numero: form.numero,
       complemento: form.complemento,
       apartamento: form.apartamento,
+      latitude,
+      longitude,
     };
 
     if (editingServico) {
