@@ -61,6 +61,11 @@ export interface Servico {
   fotosDepois?: Documento[];
   latitude?: number;
   longitude?: number;
+  cep?: string;
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  apartamento?: string;
 }
 
 // Orçamentos
