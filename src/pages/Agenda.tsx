@@ -76,6 +76,11 @@ export default function Agenda() {
     valor: "",
     status: "agendado" as StatusServico,
     tipoServico: "",
+    cep: "",
+    rua: "",
+    numero: "",
+    complemento: "",
+    apartamento: "",
   });
 
   const [documentos, setDocumentos] = useState<Documento[]>([]);
@@ -115,6 +120,11 @@ export default function Agenda() {
       documentos: documentos,
       fotosAntes: fotosAntes,
       fotosDepois: fotosDepois,
+      cep: form.cep,
+      rua: form.rua,
+      numero: form.numero,
+      complemento: form.complemento,
+      apartamento: form.apartamento,
     };
 
     if (editingServico) {
@@ -155,6 +165,11 @@ export default function Agenda() {
       valor: "",
       status: "agendado",
       tipoServico: "",
+      cep: "",
+      rua: "",
+      numero: "",
+      complemento: "",
+      apartamento: "",
     });
     setDocumentos([]);
     setFotosAntes([]);
@@ -234,6 +249,11 @@ export default function Agenda() {
       valor: servico.valor.toString(),
       status: servico.status,
       tipoServico: servico.tipoServico,
+      cep: servico.cep || "",
+      rua: servico.rua || "",
+      numero: servico.numero || "",
+      complemento: servico.complemento || "",
+      apartamento: servico.apartamento || "",
     });
     setDocumentos(servico.documentos || []);
     setFotosAntes((servico as any).fotosAntes || []);
@@ -403,6 +423,82 @@ export default function Agenda() {
                   placeholder="Detalhes do serviço..."
                   rows={3}
                 />
+              </div>
+
+              {/* Endereço de Atendimento */}
+              <div className="space-y-3 border rounded-lg p-4 bg-secondary/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">Endereço de Atendimento</Label>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cep" className="text-xs">CEP</Label>
+                    <Input
+                      id="cep"
+                      value={form.cep}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 8);
+                        setForm({ ...form, cep: val });
+                        if (val.length === 8) {
+                          fetch(`https://viacep.com.br/ws/${val}/json/`)
+                            .then(r => r.json())
+                            .then(data => {
+                              if (!data.erro) {
+                                setForm(prev => ({
+                                  ...prev,
+                                  cep: val,
+                                  rua: data.logradouro || prev.rua,
+                                  complemento: data.complemento || prev.complemento,
+                                }));
+                              }
+                            })
+                            .catch(() => {});
+                        }
+                      }}
+                      placeholder="00000000"
+                      maxLength={8}
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="rua" className="text-xs">Rua</Label>
+                    <Input
+                      id="rua"
+                      value={form.rua}
+                      onChange={(e) => setForm({ ...form, rua: e.target.value })}
+                      placeholder="Nome da rua"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="numero" className="text-xs">Número</Label>
+                    <Input
+                      id="numero"
+                      value={form.numero}
+                      onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                      placeholder="Nº"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="complemento" className="text-xs">Complemento</Label>
+                    <Input
+                      id="complemento"
+                      value={form.complemento}
+                      onChange={(e) => setForm({ ...form, complemento: e.target.value })}
+                      placeholder="Bloco, sala..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="apartamento" className="text-xs">Apto</Label>
+                    <Input
+                      id="apartamento"
+                      value={form.apartamento}
+                      onChange={(e) => setForm({ ...form, apartamento: e.target.value })}
+                      placeholder="Apto"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Upload de Documentos */}
@@ -823,6 +919,24 @@ export default function Agenda() {
                   <p className="font-medium">{getColaboradorName(selectedServico.colaboradorId)}</p>
                 </div>
 
+                {/* Endereço */}
+                {(selectedServico.rua || selectedServico.cep) && (
+                  <div>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      Endereço de Atendimento
+                    </p>
+                    <p className="font-medium">
+                      {[
+                        selectedServico.rua,
+                        selectedServico.numero && `Nº ${selectedServico.numero}`,
+                        selectedServico.complemento,
+                        selectedServico.apartamento && `Apto ${selectedServico.apartamento}`,
+                        selectedServico.cep && `CEP ${selectedServico.cep}`,
+                      ].filter(Boolean).join(" - ")}
+                    </p>
+                  </div>
+                )}
                 {selectedServico.descricao && (
                   <div>
                     <p className="text-sm text-muted-foreground">Descrição</p>
