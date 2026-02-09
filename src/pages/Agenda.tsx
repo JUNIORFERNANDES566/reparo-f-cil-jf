@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { format, isSameDay, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, ChevronLeft, ChevronRight, Clock, MapPin, User, MoreHorizontal, Edit, Trash2, X, Upload, FileText, Image as ImageIcon, Camera, Map, CalendarDays } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Clock, MapPin, User, MoreHorizontal, Edit, Trash2, X, Upload, FileText, Image as ImageIcon, Camera, Map, CalendarDays, Navigation, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -959,6 +959,32 @@ export default function Agenda() {
                         selectedServico.cep && `CEP ${selectedServico.cep}`,
                       ].filter(Boolean).join(" - ")}
                     </p>
+                    {selectedServico.latitude && selectedServico.longitude && (
+                      <div className="flex gap-2 mt-2">
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${selectedServico.latitude},${selectedServico.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1"
+                        >
+                          <Button variant="outline" size="sm" className="w-full gap-2 text-xs">
+                            <Navigation className="h-3 w-3" />
+                            Google Maps
+                          </Button>
+                        </a>
+                        <a
+                          href={`https://waze.com/ul?ll=${selectedServico.latitude},${selectedServico.longitude}&navigate=yes`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1"
+                        >
+                          <Button variant="outline" size="sm" className="w-full gap-2 text-xs">
+                            <ExternalLink className="h-3 w-3" />
+                            Waze
+                          </Button>
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
                 {selectedServico.descricao && (
