@@ -5,6 +5,12 @@
   text-align: center;
 }
 
+html, body {
+  overflow: hidden; /* Evita scroll elástico */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; /* Impede seleção de texto */
+}
 .logo {
   height: 6em;
   padding: 1.5em;
