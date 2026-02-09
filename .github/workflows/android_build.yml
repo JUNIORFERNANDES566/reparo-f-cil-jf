@@ -2,7 +2,8 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ] # Dispara quando você envia código para a main
+    branches: [ main, master ]
+  workflow_dispatch: # Permite rodar manualmente na aba Actions
 
 jobs:
   build:
@@ -18,8 +19,11 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install Project Dependencies
+        run: |
+          npm install
+          # Força a instalação dos pacotes do Capacitor no projeto
+          npm install @capacitor/cli@latest @capacitor/core@latest @capacitor/android@latest --save
 
       - name: Build Web Project
         run: npm run build
@@ -33,28 +37,25 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Capacitor CLI & Sync
+      - name: Initialize and Sync Capacitor
         run: |
-          # Instala o CLI globalmente no runner para garantir o executável
-          npm install -g @capacitor/cli @capacitor/core @capacitor/android
-          
-          # Tenta inicializar se o arquivo de config não existir
+          # Inicializa se o arquivo de config não existir
           if [ ! -f "capacitor.config.ts" ] && [ ! -f "capacitor.config.json" ]; then
             npx cap init "JF Servicos" "com.jfservicos.app" --web-dir dist
           fi
-
-          # Adiciona a pasta android e sincroniza
+          
+          # Adiciona e sincroniza a plataforma Android
           npx cap add android || true
           npx cap sync android
-          
+
       - name: Build APK (Debug)
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jf-servicos-debug-apk
+          name: jf-servicos-app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
