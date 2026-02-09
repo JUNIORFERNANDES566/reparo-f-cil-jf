@@ -190,6 +190,14 @@ export function ServicesMapView({
             cancelado: "Cancelado",
           };
 
+          const enderecoCompleto = [
+            servico.rua,
+            servico.numero && `Nº ${servico.numero}`,
+            servico.complemento,
+            servico.apartamento && `Apto ${servico.apartamento}`,
+            servico.cep && `CEP ${servico.cep}`,
+          ].filter(Boolean).join(" - ") || cliente?.endereco || "";
+
           const popupContent = `
             <div style="min-width: 200px;">
               <h4 style="font-weight: 600; margin: 0 0 8px 0;">${servico.titulo}</h4>
@@ -202,6 +210,9 @@ export function ServicesMapView({
               <p style="margin: 4px 0; font-size: 12px; color: #666;">
                 <strong>Tipo:</strong> ${servico.tipoServico}
               </p>
+              ${enderecoCompleto ? `<p style="margin: 4px 0; font-size: 12px; color: #666;">
+                <strong>Endereço:</strong> ${enderecoCompleto}
+              </p>` : ""}
               <p style="margin: 4px 0; font-size: 12px; color: #666;">
                 <strong>Data:</strong> ${new Date(servico.data).toLocaleDateString("pt-BR")}
               </p>
