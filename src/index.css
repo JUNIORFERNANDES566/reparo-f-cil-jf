@@ -141,3 +141,12 @@
     box-shadow: var(--shadow-card);
   }
 }
+
+/* Leaflet popup z-index fix */
+.leaflet-popup {
+  z-index: 10000 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 10000 !important;
+}

@@ -119,11 +119,18 @@ export default function Agenda() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Build address string for geocoding
-    const addressParts = [form.rua, form.numero].filter(Boolean);
-    const addressString = addressParts.length > 0
-      ? `${addressParts.join(", ")}${form.cep ? ` - ${form.cep}` : ""}`
-      : "";
+    // Build address string for geocoding - prioritize CEP + number for precision
+    const cliente = clientes.find((c) => c.id === form.clienteId);
+    const cidade = cliente?.cidade || "Pelotas";
+    let addressString = "";
+    if (form.cep && form.numero) {
+      addressString = `${form.rua}, ${form.numero}, ${cidade} - RS, ${form.cep}, Brazil`;
+    } else if (form.cep) {
+      addressString = `${form.rua || ""}, ${cidade} - RS, ${form.cep}, Brazil`;
+    } else {
+      const parts = [form.rua, form.numero, cidade].filter(Boolean);
+      addressString = parts.length > 0 ? `${parts.join(", ")}, RS, Brazil` : "";
+    }
 
     let latitude: number | undefined;
     let longitude: number | undefined;

@@ -235,7 +235,11 @@ export function ServicesMapView({
             icon: createStatusIcon(servico.status),
           })
             .addTo(map)
-            .bindPopup(popupContent);
+            .bindPopup(popupContent, {
+              autoPan: true,
+              autoPanPadding: L.point(50, 50),
+              className: "service-popup-high-z",
+            });
 
           marker.on("click", () => {
             if (onServicoClick) {
