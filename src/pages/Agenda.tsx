@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { format, isSameDay, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, ChevronLeft, ChevronRight, Clock, MapPin, User, MoreHorizontal, Edit, Trash2, X, Upload, FileText, Image as ImageIcon, Camera, Map, CalendarDays, Navigation, ExternalLink } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Clock, MapPin, User, MoreHorizontal, Edit, Trash2, X, Upload, FileText, Image as ImageIcon, Camera, Map, CalendarDays, Navigation, ExternalLink, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -66,6 +76,7 @@ export default function Agenda() {
   const [selectedServico, setSelectedServico] = useState<Servico | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [finalizarServico, setFinalizarServico] = useState<Servico | null>(null);
 
   const [form, setForm] = useState({
     titulo: "",
@@ -293,6 +304,20 @@ export default function Agenda() {
       title: "Serviço removido",
       description: "O serviço foi removido da agenda.",
       variant: "destructive",
+    });
+  };
+
+  const handleFinalizar = (servico: Servico) => {
+    setServicos(
+      servicos.map((s) =>
+        s.id === servico.id ? { ...s, status: "concluido" as StatusServico } : s
+      )
+    );
+    setFinalizarServico(null);
+    setSelectedServico(null);
+    toast({
+      title: "Serviço finalizado com sucesso!",
+      description: `O serviço "${servico.titulo}" foi marcado como concluído.`,
     });
   };
 
@@ -849,19 +874,37 @@ export default function Agenda() {
                     .map((servico) => (
                       <div
                         key={servico.id}
-                        onClick={() => setSelectedServico(servico)}
-                        className="p-3 rounded-lg border bg-secondary/30 hover:bg-secondary/50 transition-colors cursor-pointer"
+                        className="p-3 rounded-lg border bg-secondary/30 hover:bg-secondary/50 transition-colors"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
+                          <div
+                            className="flex-1 min-w-0 cursor-pointer"
+                            onClick={() => setSelectedServico(servico)}
+                          >
                             <h4 className="font-medium text-foreground truncate text-sm">{servico.titulo}</h4>
                             <p className="text-xs text-muted-foreground">
                               {getClienteName(servico.clienteId)} • {format(parseISO(servico.data), "dd/MM")} às {servico.horario}
                             </p>
                           </div>
-                          <Badge variant="outline" className={cn("shrink-0 text-xs", statusConfig[servico.status].className)}>
-                            {statusConfig[servico.status].label}
-                          </Badge>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {(servico.status === "agendado" || servico.status === "em_andamento") && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1 text-xs border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFinalizarServico(servico);
+                                }}
+                              >
+                                <CheckCircle className="h-3 w-3" />
+                                Finalizar
+                              </Button>
+                            )}
+                            <Badge variant="outline" className={cn("text-xs", statusConfig[servico.status].className)}>
+                              {statusConfig[servico.status].label}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     ))
@@ -1085,10 +1128,43 @@ export default function Agenda() {
                   </div>
                 )}
               </div>
+
+              {/* Botão Finalizar no modal de detalhes */}
+              {(selectedServico.status === "agendado" || selectedServico.status === "em_andamento") && (
+                <Button
+                  className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => setFinalizarServico(selectedServico)}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Finalizar Serviço
+                </Button>
+              )}
             </>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de confirmação de finalização */}
+      <AlertDialog open={!!finalizarServico} onOpenChange={() => setFinalizarServico(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar Serviço</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar o serviço de{" "}
+              <strong>{finalizarServico ? getClienteName(finalizarServico.clienteId) : ""}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => finalizarServico && handleFinalizar(finalizarServico)}
+            >
+              Confirmar Finalização
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
