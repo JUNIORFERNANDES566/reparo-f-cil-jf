@@ -9,7 +9,7 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult |
 
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=br&limit=1`,
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=br&limit=1&addressdetails=1`,
       {
         headers: {
           "User-Agent": "JFServicos/1.0",
