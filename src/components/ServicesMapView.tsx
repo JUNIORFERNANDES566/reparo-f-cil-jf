@@ -63,6 +63,7 @@ interface ServicesMapViewProps {
   servicos: Servico[];
   clientes: Cliente[];
   onServicoClick?: (servico: Servico) => void;
+  onServicoLocationUpdate?: (servicoId: string, lat: number, lon: number) => void;
   className?: string;
   showOnlyActive?: boolean;
 }
@@ -71,6 +72,7 @@ export function ServicesMapView({
   servicos,
   clientes,
   onServicoClick,
+  onServicoLocationUpdate,
   className = "",
   showOnlyActive = true,
 }: ServicesMapViewProps) {
@@ -233,6 +235,7 @@ export function ServicesMapView({
 
           const marker = L.marker([lat, lon], {
             icon: createStatusIcon(servico.status),
+            draggable: true,
           })
             .addTo(map)
             .bindPopup(popupContent, {
@@ -244,6 +247,13 @@ export function ServicesMapView({
           marker.on("click", () => {
             if (onServicoClick) {
               onServicoClick(servico);
+            }
+          });
+
+          marker.on("dragend", () => {
+            const pos = marker.getLatLng();
+            if (onServicoLocationUpdate) {
+              onServicoLocationUpdate(servico.id, pos.lat, pos.lng);
             }
           });
 
@@ -260,7 +270,7 @@ export function ServicesMapView({
     };
 
     addMarkers();
-  }, [filteredServicos, clientes, loading, onServicoClick, userLocation]);
+  }, [filteredServicos, clientes, loading, onServicoClick, onServicoLocationUpdate, userLocation]);
 
   const centerOnUserLocation = () => {
     if (mapInstanceRef.current && userLocation) {

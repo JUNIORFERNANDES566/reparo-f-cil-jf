@@ -4,39 +4,41 @@ interface GeocodingResult {
   displayName: string;
 }
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+const LOCATIONIQ_API_KEY = "pk.742e1297fcb9f1fe85ed5563c8940e59";
 
 export async function geocodeAddress(address: string): Promise<GeocodingResult | null> {
   if (!address) return null;
 
-  if (!GOOGLE_MAPS_API_KEY) {
+  if (!LOCATIONIQ_API_KEY) {
     console.warn(
-      "[Geocoding] VITE_GOOGLE_MAPS_API_KEY não está definida. A geocodificação não funcionará. " +
-      "Adicione a variável no seu arquivo .env ou nas variáveis de ambiente do projeto."
+      "[Geocoding] LocationIQ API Key não está definida. A geocodificação não funcionará."
     );
     return null;
   }
 
   try {
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}&region=br&language=pt-BR`
+      `https://us1.locationiq.com/v1/search?key=${LOCATIONIQ_API_KEY}&q=${encodeURIComponent(address)}&format=json&countrycodes=br&limit=1&addressdetails=1`
     );
 
-    if (!response.ok) return null;
-
-    const data = await response.json();
-
-    if (data.status !== "OK" || !data.results || data.results.length === 0) {
-      console.warn("[Geocoding] Nenhum resultado encontrado para:", address, "Status:", data.status);
+    if (!response.ok) {
+      console.warn("[Geocoding] Erro na resposta:", response.status);
       return null;
     }
 
-    const result = data.results[0];
+    const data = await response.json();
+
+    if (!data || data.length === 0) {
+      console.warn("[Geocoding] Nenhum resultado encontrado para:", address);
+      return null;
+    }
+
+    const result = data[0];
 
     return {
-      lat: result.geometry.location.lat,
-      lon: result.geometry.location.lng,
-      displayName: result.formatted_address,
+      lat: parseFloat(result.lat),
+      lon: parseFloat(result.lon),
+      displayName: result.display_name,
     };
   } catch (error) {
     console.error("[Geocoding] Erro na geocodificação:", error);
