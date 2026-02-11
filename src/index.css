@@ -142,11 +142,19 @@
   }
 }
 
-/* Leaflet popup z-index fix */
+/* Leaflet z-index layering fix */
+.leaflet-container {
+  z-index: 1 !important;
+}
+
 .leaflet-popup {
   z-index: 10000 !important;
 }
 
 .leaflet-popup-pane {
   z-index: 10000 !important;
+}
+
+.lucide, .fixed, [role='dialog'] {
+  z-index: 9999 !important;
 }
