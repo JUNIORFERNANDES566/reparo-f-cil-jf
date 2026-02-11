@@ -860,6 +860,15 @@ export default function Agenda() {
                 servicos={servicos}
                 clientes={clientes}
                 onServicoClick={(servico) => setSelectedServico(servico)}
+                onServicoLocationUpdate={(servicoId, lat, lon) => {
+                  setServicos(servicos.map(s =>
+                    s.id === servicoId ? { ...s, latitude: lat, longitude: lon } : s
+                  ));
+                  toast({
+                    title: "Localização atualizada",
+                    description: "As coordenadas do serviço foram ajustadas manualmente.",
+                  });
+                }}
               />
             </div>
 
